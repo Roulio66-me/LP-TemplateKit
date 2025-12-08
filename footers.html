@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Footers</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body data-type="footer">
+  <div class="container">
+
+    <div class="header-row">
+      <div class="brand"><span class="dot"></span> LP-TemplateKit</div>
+      <div>
+        <a class="btn" href="index.html">Accueil</a>
+        <a class="btn" href="headers.html">Headers</a>
+        <a class="btn" href="sections.html">Sections</a>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button id="btnNew" class="btn primary">+ Nouveau footer</button>
+      <button id="btnExport" class="btn">Exporter JSON</button>
+      <label class="btn">Importer JSON <input id="btnImport" type="file" accept=".json" style="display:none" /></label>
+    </div>
+
+    <div id="grid" class="grid"></div>
+
+    <div id="editorWrap" style="display:none;margin-top:18px;">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong id="inp-type">FOOTER</strong> — Éditeur</div>
+          <div><button id="editorCancel" class="btn">Fermer</button></div>
+        </div>
+
+        <div style="margin-top:10px">
+
+          <div class="form-row">
+            <div class="label">Nom</div>
+            <input id="name" class="input" placeholder="Ex: Footer Simple" />
+          </div>
+
+          <div class="form-row">
+            <div class="label">Description</div>
+            <input id="desc" class="input" placeholder="Petite description (optionnel)" />
+          </div>
+
+          <div class="form-row" style="align-items:flex-start">
+            <div class="label">HTML</div>
+            <textarea id="htmlcode"></textarea>
+          </div>
+
+          <div class="form-row" style="align-items:flex-start">
+            <div class="label">CSS</div>
+            <textarea id="csscode"></textarea>
+          </div>
+          <div class="form-row" style="align-items:flex-start">
+            <div class="label">Preview</div>
+            <div style="flex:1">
+              <div id="livePreview" class="preview"></div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button id="editorSave" class="btn primary">Enregistrer</button>
+            <button id="editorCancel" class="btn">Annuler</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">Templates stockés sur Firebase (Public).</div>
+
+  </div>
+
+  <script type="module" src="assets/app.js"></script>
+</body>
+</html>

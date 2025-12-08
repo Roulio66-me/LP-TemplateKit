@@ -1,0 +1,122 @@
+/* styles.css - simple, clair, responsive */
+:root{
+  --bg:#0f172a;
+  --card:#0b1220;
+  --muted:#9aa4b2;
+  --accent:#06b6d4;
+  --radius:12px;
+  --gap:16px;
+  --maxw:1400px; /* Largeur du conteneur principal à environ 75% de l'écran */
+  font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:linear-gradient(180deg,#071027 0%, #07182a 100%);
+  color:#e6eef6;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  padding:28px;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  gap:24px;
+  font-size:15px;
+}
+.container{
+  width:100%;
+  max-width:var(--maxw);
+  margin:0 auto;
+}
+.header-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom:18px;
+}
+.brand{font-weight:700; font-size:20px; display:flex; gap:10px; align-items:center}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+nav a{color:var(--muted);text-decoration:none;margin-left:12px}
+.actions{display:flex;gap:8px}
+.btn{
+  background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer;
+}
+.btn.primary{background:linear-gradient(90deg,var(--accent),#7c3aed);color:#02121a;border:none}
+.grid{
+  display:grid;
+  /* Chaque carte prend la pleine largeur de la grille (une colonne) */
+  grid-template-columns: 1fr; 
+  gap:var(--gap);
+}
+.card{
+  background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius:var(--radius);
+  padding:12px;
+  border:1px solid rgba(255,255,255,0.03);
+}
+
+/* STYLES POUR L'AFFICHAGE CÔTE À CÔTE (dans chaque carte) */
+.template-content{
+  display:flex;
+  gap:var(--gap);
+  margin-top:10px;
+}
+.content-col{
+  flex:1;
+  min-width:0;
+}
+.col-title{
+  font-size:13px;
+  color:var(--accent);
+  margin-top:0;
+  margin-bottom:6px;
+  font-weight:600;
+}
+.preview-col .preview{
+  min-height:100px;
+}
+.code-col .template-code{
+  max-height:220px;
+  min-height:100px;
+}
+/* FIN STYLES CÔTE À CÔTE */
+
+.preview{
+  background:#071224;
+  border-radius:8px;
+  padding:12px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,0.03);
+}
+.card .meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px}
+.small{font-size:13px;color:var(--muted)}
+.template-code{
+  background:#020617;
+  border-radius:8px;
+  padding:10px;
+  max-height:220px;
+  overflow:auto;
+  font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+  font-size:13px;
+  color:#dff7fb;
+  border:1px solid rgba(255,255,255,0.03)
+}
+.form-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.label{font-size:13px;color:var(--muted);min-width:70px}
+.input, textarea{flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+textarea{min-height:120px;resize:vertical}
+.controls{display:flex;gap:6px;flex-wrap:wrap}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.footer-note{color:var(--muted);font-size:13px;margin-top:14px;text-align:center}
+@media (max-width:900px){
+  /* En dessous de 900px, les colonnes Aperçu et Code passent en mode empilé (l'une au-dessus de l'autre) */
+  .template-content{
+    flex-direction:column;
+  }
+}
+@media (max-width:700px){
+  body{padding:12px}
+  .header-row{flex-direction:column;align-items:flex-start;gap:8px}
+}
