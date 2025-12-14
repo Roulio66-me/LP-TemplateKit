@@ -1,38 +1,37 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Templates - Accueil</title>
-  <link rel="stylesheet" href="assets/styles.css" />
-  <style>
-    /* Styles spécifiques à l'accueil pour les liens */
-    .link-grid {
-      display: flex;
-      gap: 16px;
-      margin-top: 20px;
-    }
-    .link-grid .btn {
-      padding: 12px 20px;
-      font-size: 16px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP-TemplateKit | Accueil</title>
+    <link rel="stylesheet" href="assets/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body data-type="home">
-  <div class="container">
-    <div class="header-row">
-      <div class="brand"><span class="dot"></span> LP-TemplateKit</div>
-      <nav class="link-grid">
-        <a class="btn primary" href="templates.html?type=header">Gérer Headers</a>
-        <a class="btn primary" href="templates.html?type=section">Gérer Sections</a>
-        <a class="btn primary" href="templates.html?type=footer">Gérer Footers</a>
-      </nav>
-    </div>
+<body>
+    <header class="app-header">
+        <h1>LP-TemplateKit</h1>
+        <p>Bibliothèque de composants Web HTML/CSS réutilisables</p>
+    </header>
 
-    <div class="card">
-      <h3>Bienvenue — kit de templates simplifié</h3>
-      <p class="small">Utilisez les boutons ci-dessus pour naviguer et gérer vos templates (Headers, Sections, Footers). La base de données Firebase est utilisée pour la sauvegarde publique.</p>
-    </div>
-  </div>
+    <main class="container index-main">
+        <h2>Découvrir les Composants</h2>
+        <nav class="category-nav">
+            <a href="templates.html?type=header" class="category-card">
+                <span class="emoji">🧱</span>
+                <h3>Headers</h3>
+                <p>Navigations et bannières principales.</p>
+            </a>
+            <a href="templates.html?type=section" class="category-card">
+                <span class="emoji">📃</span>
+                <h3>Sections</h3>
+                <p>Blocs de contenu, fonctionnalités, tarifs, etc.</p>
+            </a>
+            <a href="templates.html?type=footer" class="category-card">
+                <span class="emoji">🦶</span>
+                <h3>Footers</h3>
+                <p>Pieds de page et informations légales.</p>
+            </a>
+        </nav>
+    </main>
 </body>
 </html>

@@ -1,301 +1,418 @@
-/* assets/app.js - Kit de Templates Simplifié avec Firebase Firestore */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+/**
+ * LP-TemplateKit - Logique Applicative (app.js)
+ * Implémente le CRUD, le Live Preview et l'écoute en temps réel (onSnapshot)
+ * en utilisant Firebase Firestore et JavaScript Vanilla.
+ *
+ * NOTE : REMPLACEZ LES PLACEHOLDERS CI-DESSOUS PAR VOTRE CONFIGURATION FIREBASE RÉELLE.
+ */
 
-// Votre configuration Firebase (DOIT RESTER INTACTE)
+// --- I. Configuration Firebase (Section III) ---
 const firebaseConfig = {
-  apiKey: "AIzaSyD4mOy5q1T4wZ2xaB8s1OjU3JDsimMKDVQ",
-  authDomain: "templatekit-23386.firebaseapp.com",
-  projectId: "templatekit-23386",
-  storageBucket: "templatekit-23386.firebasestorage.app",
-  messagingSenderId: "9974063516",
-  appId: "1:9974063516:web:60e1054904697a61a3a859"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
-// Initialisation de Firebase et Firestore
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const TEMPLATES_COLLECTION = 'templates'; 
+// Initialisation de Firebase
+if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const templatesCollection = db.collection('templates');
+    
+    // Pour les timestamps (createdAt)
+    const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp;
 
-let allTemplates = []; // Stockage local de tous les templates
-let currentPageType = ''; // Type de template actuel (header, section, footer)
+    // Référence au conteneur principal
+    const templatesContainer = document.getElementById('templates-container');
+    // Références à la Modal
+    const editorModal = document.getElementById('editor-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const closeBtn = editorModal ? editorModal.querySelector('.close-btn') : null;
+    const templateForm = document.getElementById('template-form');
+    // Références aux champs du formulaire
+    const templateIdField = document.getElementById('template-id');
+    const templateNameField = document.getElementById('template-name');
+    const templateDescriptionField = document.getElementById('template-description');
+    const templateHtmlField = document.getElementById('template-html');
+    const templateCssField = document.getElementById('template-css');
+    const livePreviewIframe = document.getElementById('live-preview-iframe');
+    const saveButton = document.getElementById('save-button');
+    const openCreateModalBtn = document.getElementById('open-create-modal');
 
-// --- Fonctions d'Utilité ---
+    // Type de template actuel (header, section, footer)
+    let currentTemplateType = '';
+    
+    // --- II. Fonctions de Rendu et Utilitaires ---
 
-function getUrlParameter(name) {
-    name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-    const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-    const results = regex.exec(location.search);
-    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
-}
+    /**
+     * F06: Met à jour l'aperçu en temps réel dans l'iframe.
+     * @param {string} htmlCode 
+     * @param {string} cssCode 
+     */
+    function updateLivePreview(htmlCode, cssCode) {
+        if (!livePreviewIframe) return;
 
-// Combine HTML et CSS
-function combineCode(html, css){
-    let combined = '';
-    if(css && css.trim().length > 0) {
-        combined += `<style>\n${css}\n</style>\n`;
+        // Le HTML complet avec les styles CSS globaux injectés
+        const iframeContent = `
+            <!DOCTYPE html>
+            <html lang="fr">
+            <head>
+                <style>
+                    /* Styles CSS injectés (pour l'isolation) */
+                    ${cssCode}
+                </style>
+                <style>
+                    /* Injection des variables CSS hôtes pour le thème */
+                    :root {
+                        --color-primary: #007bff;
+                        --color-secondary: #6c757d;
+                        --color-bg-light: #f8f9fa;
+                        --color-bg-dark: #343a40;
+                        --color-text-light: #f8f9fa;
+                        --color-text-dark: #212529;
+                        --font-family: 'Inter', sans-serif;
+                    }
+                    /* Le corps de l'iframe est par défaut blanc pour le rendu de composant */
+                    body { margin: 0; padding: 0; font-family: var(--font-family); }
+                </style>
+            </head>
+            <body>
+                ${htmlCode}
+            </body>
+            </html>
+        `;
+
+        livePreviewIframe.contentDocument.open();
+        livePreviewIframe.contentDocument.write(iframeContent);
+        livePreviewIframe.contentDocument.close();
     }
-    combined += html;
-    return combined;
-}
 
-// Crée le contenu isolé pour les iframes (aperçus)
-function createIframeContent(html, css, name = 'Aperçu'){
-  const combined = combineCode(html, css);
-  return `
-    <!doctype html>
-    <html lang="fr">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <title>${name}</title>
-        <link rel="stylesheet" href="/assets/styles.css" /> 
-        <style>
-            body { margin: 0; padding: 10px; background-color: var(--bg, #0f172a); }
-        </style>
-    </head>
-    <body>
-        ${combined}
-    </body>
-    </html>
-  `;
-}
+    /**
+     * Crée une carte de template (F03) dans le DOM.
+     * @param {Object} template - Le document Firestore.
+     */
+    function createTemplateCard(template) {
+        const docId = template.id;
+        const data = template.data();
 
-// échappement simple pour affichage brut
-function escapeHtml(s){
-  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+        const card = document.createElement('div');
+        card.className = 'template-card';
+        card.dataset.id = docId;
 
-async function copyToClipboard(text){
-  try{
-    await navigator.clipboard.writeText(text);
-    alert('Code copié ✅');
-  }catch(e){
-    // fallback
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    ta.remove();
-    alert('Code copié (fallback) ✅');
-  }
-}
+        // Contenu de l'iframe pour l'aperçu de la carte
+        const iframeContent = `
+            <!DOCTYPE html>
+            <html lang="fr">
+            <head>
+                <style>
+                    ${data.css}
+                    /* Styles minimal pour le rendu de la carte */
+                    body { margin: 0; padding: 0; font-family: sans-serif; }
+                </style>
+            </head>
+            <body>
+                ${data.html}
+            </body>
+            </html>
+        `;
 
-// --- Fonctions de Rendu et Éditeur ---
+        card.innerHTML = `
+            <div class="template-card-header">
+                <h3>${data.name}</h3>
+                <p>${data.description}</p>
+            </div>
+            <div class="template-preview-wrapper">
+                <iframe 
+                    title="Aperçu du Template ${data.name}" 
+                    sandbox="allow-scripts allow-same-origin"
+                ></iframe>
+            </div>
+            <div class="template-actions">
+                <div class="crud-actions">
+                    <button class="btn btn-secondary btn-small edit-btn" data-id="${docId}">Modifier (F04)</button>
+                    <button class="btn btn-danger btn-small delete-btn" data-id="${docId}">Supprimer (F05)</button>
+                </div>
+                <div class="quick-actions">
+                    <button class="btn btn-small copy-html-btn" data-id="${docId}">Copier HTML (F07)</button>
+                    <button class="btn btn-small copy-css-btn" data-id="${docId}">Copier CSS (F07)</button>
+                    <button class="btn btn-primary btn-small fullscreen-btn" data-id="${docId}">Plein Écran (F07)</button>
+                </div>
+            </div>
+        `;
 
-function renderPage(pageType){
-  const grid = document.getElementById('grid');
-  grid.innerHTML = '';
-  const filteredTemplates = allTemplates.filter(t => t.type === pageType);
-  
-  if(!filteredTemplates.length){
-    grid.innerHTML = `<div class="card"><div class="small">Aucun template ${pageType} — ajoutez le premier.</div></div>`;
-    return;
-  }
+        const iframe = card.querySelector('iframe');
+        iframe.contentDocument.open();
+        iframe.contentDocument.write(iframeContent);
+        iframe.contentDocument.close();
 
-  filteredTemplates.forEach(t => {
-    const card = document.createElement('div'); card.className='card';
-    card.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-weight:600">${escapeHtml(t.name)}</div>
-        <div class="small">${new Date(t.createdAt).toLocaleString()}</div>
-      </div>
-      <div class="meta">
-        <div class="small">${t.description || ''}</div>
-        <div class="controls">
-          <button class="btn" data-act="copy-html" data-id="${t.id}">Copier HTML</button>
-          <button class="btn" data-act="copy-css" data-id="${t.id}">Copier CSS</button>
-          <button class="btn" data-act="edit" data-id="${t.id}">Éditer</button>
-          <button class="btn" data-act="delete" data-id="${t.id}">Supprimer</button>
-          <button class="btn primary" data-act="full" data-id="${t.id}">Plein écran</button>
-        </div>
-      </div>
-      <div class="template-content">
-        <div class="content-col preview-col">
-          <p class="col-title">Aperçu Visuel</p>
-          <div class="preview-iframe-wrapper" data-id="${t.id}"></div>
-        </div>
-        <div class="content-col code-col" style="display:flex; flex-direction:column">
-          <p class="col-title">Code HTML</p>
-          <pre class="template-code html-code-preview" style="flex:1">${escapeHtml(t.html)}</pre>
-          <p class="col-title">Code CSS</p>
-          <pre class="template-code css-code-preview" style="flex:1;">${escapeHtml(t.css || '// Pas de CSS enregistré')}</pre>
-        </div>
-      </div>
-    `;
-    grid.appendChild(card);
+        return card;
+    }
 
-    // Injection de l'iframe pour l'aperçu
-    const iframeWrapper = card.querySelector('.preview-iframe-wrapper');
-    const iframe = document.createElement('iframe');
-    iframe.className = 'preview-iframe-list'; 
-    iframe.setAttribute('sandbox', 'allow-scripts');
-    iframeWrapper.appendChild(iframe);
-    
-    const iframeContent = createIframeContent(t.html, t.css, t.name);
-    iframe.contentWindow.document.open();
-    iframe.contentWindow.document.write(iframeContent);
-    iframe.contentWindow.document.close();
-  });
-}
+    /**
+     * Gère l'affichage des templates à partir d'un snapshot Firestore. (F08)
+     * @param {Object} snapshot - Le QuerySnapshot de Firestore.
+     */
+    function renderTemplates(snapshot) {
+        if (!templatesContainer) return;
+        
+        // Nettoyer les cartes existantes pour l'écoute en temps réel
+        templatesContainer.innerHTML = ''; 
 
-
-function openEditor(options){
-  const {mode='add', pageType='', template=null} = options;
-  const editorWrap = document.getElementById('editorWrap');
-  editorWrap.dataset.mode = mode;
-  editorWrap.dataset.type = pageType;
-  if(template) editorWrap.dataset.id = template.id;
-
-  const html = template ? template.html : '<div>Ton HTML ici</div>';
-  const css = template ? (template.css || '') : '/* Ton CSS ici */'; 
-
-  document.getElementById('inp-type').textContent = pageType.toUpperCase();
-  document.getElementById('name').value = template ? template.name : '';
-  document.getElementById('desc').value = template ? (template.description||'') : '';
-  document.getElementById('htmlcode').value = html;
-  document.getElementById('csscode').value = css;
-  
-  // Rendre l'aperçu initial
-  const iframeContent = createIframeContent(html, css, template ? template.name : 'Nouvelle Section');
-  const previewIframe = document.getElementById('livePreview'); 
-  previewIframe.contentWindow.document.open();
-  previewIframe.contentWindow.document.write(iframeContent);
-  previewIframe.contentWindow.document.close();
-  
-  document.body.classList.add('editor-open'); 
-  editorWrap.style.display = 'block';
-  document.getElementById('name').focus();
-}
-
-function closeEditor(){
-  document.body.classList.remove('editor-open'); 
-  document.getElementById('editorWrap').style.display = 'none';
-}
-
-// Événement: Live preview pendant l'édition
-function updateLivePreview(){
-    const html = document.getElementById('htmlcode').value;
-    const css = document.getElementById('csscode').value;
-    const iframeContent = createIframeContent(html, css, 'Aperçu en direct');
-    const previewIframe = document.getElementById('livePreview');
-    previewIframe.contentWindow.document.open();
-    previewIframe.contentWindow.document.write(iframeContent);
-    previewIframe.contentWindow.document.close();
-}
-
-// Écoute en temps réel des templates de la collection
-function setupRealtimeListener(pageType) {
-    const q = collection(db, TEMPLATES_COLLECTION);
-    
-    onSnapshot(q, (querySnapshot) => {
-        allTemplates = [];
-        querySnapshot.forEach((doc) => {
-            allTemplates.push({ id: doc.id, ...doc.data() });
-        });
-        renderPage(pageType);
-    }, (error) => {
-        console.error("Erreur de connexion à Firebase: ", error);
-        document.getElementById('grid').innerHTML = `<div class="card"><div class="small">Erreur de connexion à la base de données. Vérifiez la console (F12) et les règles de sécurité Firebase.</div></div>`;
-    });
-}
-
-
-// --- Démarrage de l'Application ---
-document.addEventListener('DOMContentLoaded', ()=>{
-  
-  currentPageType = getUrlParameter('type');
-  
-  if (document.body.dataset.type === 'template-page' && currentPageType) {
-      
-      const capitalizedType = currentPageType.charAt(0).toUpperCase() + currentPageType.slice(1);
-      const btnNew = document.getElementById('btnNew');
-
-      // Mise à jour du bouton Nouveau
-      if (btnNew) {
-          btnNew.textContent = `+ Nouveau ${capitalizedType}`;
-          btnNew.addEventListener('click', () => {
-              openEditor({mode:'add', pageType: currentPageType});
-          });
-      }
-      
-      // Démarrage de l'écoute Firebase
-      setupRealtimeListener(currentPageType);
-  }
-
-  // Événement: Soumission de l'éditeur (Enregistrer)
-  document.getElementById('editorSave').addEventListener('click', async ()=>{
-    const editorWrap = document.getElementById('editorWrap');
-    const mode = editorWrap.dataset.mode;
-    const type = editorWrap.dataset.type;
-    const name = document.getElementById('name').value.trim();
-    const desc = document.getElementById('desc').value.trim();
-    const html = document.getElementById('htmlcode').value;
-    const css = document.getElementById('csscode').value; 
-    
-    if(!name){ alert('Veuillez donner un nom au template.'); return; }
-
-    const data = { type, name, description: desc, html, css: css || '', createdAt: Date.now() }; 
-
-    try {
-        if(mode === 'add'){
-            await addDoc(collection(db, TEMPLATES_COLLECTION), data);
-            alert('Template ajouté à Firebase ✅');
-        }else if(mode === 'edit'){
-            const id = editorWrap.dataset.id;
-            const templateRef = doc(db, TEMPLATES_COLLECTION, id);
-            const updateData = { name, description: desc, html, css: css || '' };
-            await updateDoc(templateRef, updateData);
-            alert('Template mis à jour dans Firebase ✅');
+        if (snapshot.empty) {
+            templatesContainer.innerHTML = `<p class="empty-state">Aucun template de type "${currentTemplateType}" trouvé. Créez-en un !</p>`;
+            return;
         }
-        closeEditor();
-    } catch(e) {
-        console.error("ERREUR D'ÉCRITURE DANS FIREBASE: ", e);
-        alert(`Erreur lors de l'enregistrement. Vérifiez les règles de sécurité Firebase (allow write) : ${e.message}`);
+
+        snapshot.forEach(doc => {
+            const card = createTemplateCard(doc);
+            templatesContainer.appendChild(card);
+        });
     }
 
-  });
+    // --- III. Fonctions CRUD et Gestion d'Événements ---
 
-  // Événements d'annulation
-  document.querySelectorAll('#editorCancel').forEach(btn => btn.addEventListener('click', closeEditor));
-  
-  // Événement délégué: Clic sur la grille (Copier, Éditer, Supprimer, Plein Écran)
-  document.getElementById('grid')?.addEventListener('click', async (e)=>{
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    const act = btn.dataset.act; 
-    const id = btn.dataset.id;
+    /**
+     * Ouvre la modal en mode Création ou Modification.
+     * @param {Object} [templateData=null] - Données du template pour la modification (F04).
+     * @param {string} [docId=null] - ID du document pour la modification (F04).
+     */
+    function openModal(templateData = null, docId = null) {
+        if (!editorModal) return;
+
+        // Réinitialiser le formulaire
+        templateForm.reset();
+        templateIdField.value = '';
+        templateTypeField.value = currentTemplateType;
+        
+        if (templateData) {
+            // Mode Modification (F04)
+            modalTitle.textContent = 'Modifier le Template';
+            saveButton.textContent = 'Enregistrer les Modifications';
+            templateIdField.value = docId;
+            templateNameField.value = templateData.name;
+            templateDescriptionField.value = templateData.description;
+            templateHtmlField.value = templateData.html;
+            templateCssField.value = templateData.css;
+            updateLivePreview(templateData.html, templateData.css);
+        } else {
+            // Mode Création (F02)
+            modalTitle.textContent = `Créer un Nouveau ${currentTemplateType.charAt(0).toUpperCase() + currentTemplateType.slice(1)}`;
+            saveButton.textContent = 'Créer le Template';
+            // Initialisation de l'aperçu pour la création
+            updateLivePreview('<h1>Votre HTML ici</h1>', '/* Votre CSS ici */');
+        }
+
+        editorModal.style.display = 'block';
+    }
+
+    /**
+     * Ferme la modal.
+     */
+    function closeModal() {
+        if (editorModal) {
+            editorModal.style.display = 'none';
+        }
+    }
+
+    /**
+     * F02, F04: Gère la soumission du formulaire (Création ou Mise à Jour).
+     * @param {Event} e 
+     */
+    function handleFormSubmit(e) {
+        e.preventDefault();
+
+        const id = templateIdField.value;
+        const data = {
+            type: templateTypeField.value,
+            name: templateNameField.value,
+            description: templateDescriptionField.value,
+            html: templateHtmlField.value,
+            css: templateCssField.value,
+        };
+
+        if (id) {
+            // Mise à Jour (Update - F04)
+            templatesCollection.doc(id).update(data)
+                .then(() => {
+                    alert('Template mis à jour avec succès !');
+                    closeModal();
+                })
+                .catch(error => {
+                    console.error("Erreur de mise à jour: ", error);
+                    alert("Erreur lors de la mise à jour du template.");
+                });
+        } else {
+            // Création (Create - F02)
+            data.createdAt = serverTimestamp();
+            templatesCollection.add(data)
+                .then(() => {
+                    alert('Template créé avec succès !');
+                    closeModal();
+                })
+                .catch(error => {
+                    console.error("Erreur de création: ", error);
+                    alert("Erreur lors de la création du template.");
+                });
+        }
+    }
+
+    /**
+     * F05: Gère la suppression d'un template.
+     * @param {string} docId 
+     */
+    function deleteTemplate(docId) {
+        if (confirm("Êtes-vous sûr de vouloir supprimer définitivement ce template ? Cette action est irréversible. (F05)")) {
+            templatesCollection.doc(docId).delete()
+                .then(() => {
+                    alert('Template supprimé avec succès !');
+                })
+                .catch(error => {
+                    console.error("Erreur de suppression: ", error);
+                    alert("Erreur lors de la suppression du template.");
+                });
+        }
+    }
+
+    /**
+     * F07: Copie le code dans le presse-papiers.
+     * @param {string} text - Le texte à copier.
+     * @param {string} type - 'HTML' ou 'CSS'.
+     */
+    function copyToClipboard(text, type) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert(`${type} copié dans le presse-papiers !`);
+        }).catch(err => {
+            console.error('Erreur de copie:', err);
+            alert("Erreur lors de la copie. Le navigateur ne supporte pas l'API ou l'accès a été refusé.");
+        });
+    }
+
+    // --- IV. Initialisation et Écoute (Listeners) ---
+
+    // 1. Gérer le Type de Template (F01)
+    const urlParams = new URLSearchParams(window.location.search);
+    currentTemplateType = urlParams.get('type') || 'header'; // Défaut à 'header'
+
+    const titleMap = {
+        'header': 'Headers',
+        'section': 'Sections',
+        'footer': 'Footers'
+    };
     
-    const t = allTemplates.find(x=>x.id===id);
-    if(!t) return;
-
-    if(act === 'copy-html'){
-      copyToClipboard(combineCode(t.html, t.css)); // Copie HTML + CSS
-    }else if(act === 'copy-css'){
-      copyToClipboard(t.css || '');
-    }else if(act === 'delete'){
-      if(confirm('Supprimer ce template ? (Action définitive)')) {
-          try {
-              await deleteDoc(doc(db, TEMPLATES_COLLECTION, id));
-              alert('Template supprimé de Firebase ✅');
-          } catch(e) {
-              console.error("ERREUR DE SUPPRESSION FIREBASE: ", e);
-              alert(`Erreur lors de la suppression. Vérifiez les règles de sécurité Firebase (allow delete) : ${e.message}`);
-          }
-      }
-    }else if(act === 'edit'){
-      openEditor({mode:'edit', pageType:t.type, template:t});
-    }else if(act === 'full'){
-      const combined = createIframeContent(t.html, t.css, t.name);
-      const w = window.open('','_blank','width=900,height=700,scrollbars=yes');
-      w.document.open();
-      w.document.write(combined);
-      w.document.close();
+    // Mettre à jour le titre de la page et de la section
+    if (document.getElementById('current-category-title')) {
+        document.getElementById('current-category-title').textContent = titleMap[currentTemplateType] || 'Templates';
+        document.title = `LP-TemplateKit | ${titleMap[currentTemplateType] || 'Templates'}`;
     }
-  });
 
-  // Événement: Live preview
-  document.getElementById('htmlcode')?.addEventListener('input', updateLivePreview);
-  document.getElementById('csscode')?.addEventListener('input', updateLivePreview);
-});
+    // 2. Écoute en Temps Réel (F08)
+    if (templatesContainer) {
+        templatesCollection
+            .where('type', '==', currentTemplateType)
+            .orderBy('createdAt', 'desc') // Optionnel, pour un meilleur affichage
+            .onSnapshot(renderTemplates, error => {
+                console.error("Erreur onSnapshot: ", error);
+                templatesContainer.innerHTML = '<p class="error-state">Erreur lors du chargement des templates. Vérifiez la configuration et les règles de sécurité Firestore.</p>';
+            });
+    }
+
+    // 3. Événements de l'Interface
+
+    // Événement d'ouverture de la modal (F02)
+    if (openCreateModalBtn) {
+        openCreateModalBtn.addEventListener('click', () => openModal());
+    }
+
+    // Événement de fermeture de la modal
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeModal);
+    }
+    window.onclick = function(event) {
+        if (event.target === editorModal) {
+            closeModal();
+        }
+    }
+
+    // Événement de soumission du formulaire (F02, F04)
+    if (templateForm) {
+        templateForm.addEventListener('submit', handleFormSubmit);
+    }
+
+    // Événements d'entrée pour le Live Preview (F06)
+    if (templateHtmlField && templateCssField) {
+        const updatePreview = () => updateLivePreview(templateHtmlField.value, templateCssField.value);
+        templateHtmlField.addEventListener('input', updatePreview);
+        templateCssField.addEventListener('input', updatePreview);
+    }
+    
+    // Événements de clic délégués sur le conteneur des templates pour le CRUD et les Actions Rapides
+    if (templatesContainer) {
+        templatesContainer.addEventListener('click', async (e) => {
+            const id = e.target.dataset.id;
+            if (!id) return;
+            
+            // F04: Modifier
+            if (e.target.classList.contains('edit-btn')) {
+                try {
+                    const doc = await templatesCollection.doc(id).get();
+                    if (doc.exists) {
+                        openModal(doc.data(), id);
+                    } else {
+                        alert("Template non trouvé.");
+                    }
+                } catch (error) {
+                    console.error("Erreur de récupération pour modification:", error);
+                }
+            } 
+            // F05: Supprimer
+            else if (e.target.classList.contains('delete-btn')) {
+                deleteTemplate(id);
+            } 
+            // F07: Copier HTML / CSS
+            else if (e.target.classList.contains('copy-html-btn') || e.target.classList.contains('copy-css-btn')) {
+                try {
+                    const doc = await templatesCollection.doc(id).get();
+                    if (doc.exists) {
+                        const data = doc.data();
+                        if (e.target.classList.contains('copy-html-btn')) {
+                            copyToClipboard(data.html, 'HTML');
+                        } else {
+                            copyToClipboard(data.css, 'CSS');
+                        }
+                    }
+                } catch (error) {
+                    console.error("Erreur de récupération pour copie:", error);
+                }
+            }
+            // F07: Plein Écran
+            else if (e.target.classList.contains('fullscreen-btn')) {
+                const card = e.target.closest('.template-card');
+                const iframe = card ? card.querySelector('iframe') : null;
+                if (iframe) {
+                    const fullScreenModal = document.createElement('div');
+                    fullScreenModal.className = 'fullscreen-modal';
+                    fullScreenModal.innerHTML = `
+                        <span class="close-btn">&times;</span>
+                        <iframe style="width:100%; height:100%; border:none;" srcdoc="${iframe.contentDocument.documentElement.outerHTML}" sandbox="allow-scripts allow-same-origin"></iframe>
+                    `;
+                    
+                    fullScreenModal.querySelector('.close-btn').onclick = () => {
+                        document.body.removeChild(fullScreenModal);
+                    };
+                    document.body.appendChild(fullScreenModal);
+                    fullScreenModal.style.display = 'block';
+                }
+            }
+        });
+    }
+
+} else {
+    // Afficher une erreur si le SDK Firebase n'est pas chargé
+    const templatesContainer = document.getElementById('templates-container');
+    if(templatesContainer) {
+        templatesContainer.innerHTML = '<p class="error-state">ERREUR: Le SDK Firebase n\'a pas été chargé. Vérifiez vos balises &lt;script&gt; dans templates.html.</p>';
+    }
+}

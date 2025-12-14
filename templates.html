@@ -1,75 +1,67 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Gestion des Templates</title>
-  <link rel="stylesheet" href="assets/styles.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP-TemplateKit | Templates</title>
+    <link rel="stylesheet" href="assets/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body data-type="template-page"> 
-  <div class="container">
-    <div class="header-row">
-      <div class="brand"><span class="dot"></span> LP-TemplateKit</div>
-      <div>
-        <a class="btn" href="index.html">Accueil</a>
-        <a class="btn" href="templates.html?type=header">Headers</a>
-        <a class="btn" href="templates.html?type=section">Sections</a>
-        <a class="btn" href="templates.html?type=footer">Footers</a>
-      </div>
-    </div>
+<body>
+    <header class="app-header">
+        <a href="index.html" class="back-link">← Retour à l'accueil</a>
+        <h1 id="current-category-title"></h1>
+        <button id="open-create-modal" class="btn btn-primary">
+            + Nouveau Template
+        </button>
+    </header>
 
-    <div class="toolbar">
-      <button id="btnNew" class="btn primary">+ Nouveau </button> 
-      <button id="btnExport" class="btn">Exporter JSON</button>
-      <label class="btn">Importer JSON <input id="btnImport" type="file" accept=".json" style="display:none" /></label>
-    </div>
-
-    <div id="grid" class="grid">
-      <div class="card"><div class="small">Chargement des templates...</div></div>
-    </div>
-
-    <div id="editorWrap" style="display:none;margin-top:18px;">
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong id="inp-type">TEMPLATE</strong> — Éditeur</div>
-          <div><button id="editorCancel" class="btn">Fermer</button></div>
-        </div>
-        <div style="margin-top:10px">
-          <div class="form-row">
-            <div class="label">Nom</div>
-            <input id="name" class="input" placeholder="Ex: Header Minimal" />
-          </div>
-          <div class="form-row">
-            <div class="label">Description</div>
-            <input id="desc" class="input" placeholder="Petite description (optionnel)" />
-          </div>
-          <div class="form-row" style="align-items:flex-start">
-            <div class="label">HTML</div>
-            <textarea id="htmlcode"></textarea>
-          </div>
-          
-          <div class="form-row" style="align-items:flex-start">
-            <div class="label">CSS</div>
-            <textarea id="csscode"></textarea>
-          </div>
-          <div class="form-row" style="align-items:flex-start">
-            <div class="label">Preview</div>
-            <div style="flex:1">
-              <iframe id="livePreview" class="preview-iframe" sandbox="allow-scripts"></iframe>
+    <main class="container">
+        <div id="templates-container" class="templates-grid">
             </div>
-          </div>
+    </main>
 
-          <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button id="editorSave" class="btn primary">Enregistrer</button>
-            <button id="editorCancel" class="btn">Annuler</button>
-          </div>
+    <div id="editor-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2 id="modal-title">Créer un Nouveau Template</h2>
+            <form id="template-form">
+                <input type="hidden" id="template-id">
+                <input type="hidden" id="template-type">
+
+                <div class="form-group">
+                    <label for="template-name">Nom du Template</label>
+                    <input type="text" id="template-name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="template-description">Description</label>
+                    <textarea id="template-description" rows="2" required></textarea>
+                </div>
+
+                <div class="preview-area">
+                    <h3>Aperçu en Temps Réel</h3>
+                    <iframe id="live-preview-iframe" title="Aperçu du Template" sandbox="allow-scripts allow-same-origin"></iframe>
+                </div>
+                
+                <div class="code-editors">
+                    <div class="form-group code-editor html-editor">
+                        <label for="template-html">Code HTML</label>
+                        <textarea id="template-html" rows="15" required></textarea>
+                    </div>
+                    <div class="form-group code-editor css-editor">
+                        <label for="template-css">Code CSS</label>
+                        <textarea id="template-css" rows="15" required></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="save-button">Enregistrer</button>
+            </form>
         </div>
-      </div>
     </div>
 
-    <div class="footer-note">Templates stockés sur Firebase (Public).</div>
-  </div>
-
-  <script type="module" src="assets/app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="assets/app.js"></script>
 </body>
 </html>
