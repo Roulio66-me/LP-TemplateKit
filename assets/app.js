@@ -233,6 +233,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     
     if(!name){ alert('Donne un nom'); return; }
 
+    // Utilisation de Date.now() pour createdAt et mise à jour simple de l'heure.
     const data = { type, name, description: desc, html, css: css || '', createdAt: Date.now() }; 
 
     try {
@@ -242,17 +243,18 @@ document.addEventListener('DOMContentLoaded', ()=>{
         }else if(mode === 'edit'){
             const id = editorWrap.dataset.id;
             const templateRef = doc(db, TEMPLATES_COLLECTION, id);
-            // On met à jour sans modifier le createdAt
+            // On met à jour sans modifier le createdAt (l'objet date initial)
             const updateData = { name, description: desc, html, css: css || '' };
             await updateDoc(templateRef, updateData);
             alert('Template mis à jour dans Firebase ✅');
         }
+        closeEditor(); // Fermer l'éditeur seulement si l'opération a réussi
     } catch(e) {
         console.error("Erreur d'écriture dans Firebase: ", e);
-        alert("Erreur lors de l'enregistrement du template.");
+        // Afficher l'erreur à l'utilisateur
+        alert(`Erreur lors de l'enregistrement du template. Consultez la console pour plus de détails. Erreur: ${e.message}`);
     }
 
-    closeEditor();
   });
 
   // Événement: Annulation de l'éditeur
@@ -284,7 +286,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
               alert('Template supprimé de Firebase ✅');
           } catch(e) {
               console.error("Erreur de suppression dans Firebase: ", e);
-              alert("Erreur lors de la suppression du template.");
+              // Afficher l'erreur à l'utilisateur
+              alert(`Erreur lors de la suppression du template. Consultez la console pour plus de détails. Erreur: ${e.message}`);
           }
       }
     }else if(act === 'edit'){
