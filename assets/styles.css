@@ -74,15 +74,14 @@ nav a{color:var(--muted);text-decoration:none;margin-left:12px}
   margin-bottom:6px;
   font-weight:600;
 }
-.preview-col .preview{
-  min-height:100px;
-}
+
 .code-col .template-code{
   max-height:220px;
   min-height:100px;
 }
-/* FIN STYLES CÔTE À CÔTE */
+/* FIN STYLES CÔTE À CÔTÉ */
 
+/* SUPPRIMÉ: ANCIEN STYLE .preview
 .preview{
   background:#071224;
   border-radius:8px;
@@ -90,6 +89,42 @@ nav a{color:var(--muted);text-decoration:none;margin-left:12px}
   overflow:hidden;
   border:1px solid rgba(255,255,255,0.03);
 }
+*/
+
+/* --- NOUVEAUX Styles pour les Iframes d'Aperçu (Isolation) --- */
+
+/* Conteneur pour l'iframe dans la liste (remplace l'ancien .preview) */
+.preview-iframe-wrapper {
+  background:#071224; 
+  border-radius:var(--radius);
+  overflow:hidden; 
+  border:1px solid rgba(255,255,255,0.03);
+  padding: 0; 
+}
+
+/* Style de l'iframe dans la liste de templates */
+.preview-iframe-list {
+  border: none;
+  width: 100%;
+  min-height: 150px;
+  display: block;
+}
+
+/* Style de l'iframe dans l'éditeur (Modal) */
+.preview-iframe {
+  /* Style de la boîte conteneur de l'iframe dans l'éditeur */
+  background:#071224;
+  border-radius:var(--radius);
+  border:1px solid rgba(255,255,255,0.03);
+  width: 100%;
+  min-height: 250px;
+  height: 350px; /* Hauteur par défaut pour l'éditeur */
+  resize: vertical; /* Permet à l'utilisateur de redimensionner */
+  display: block;
+  padding: 0;
+}
+
+
 .card .meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px}
 .small{font-size:13px;color:var(--muted)}
 .template-code{

@@ -14,13 +14,11 @@
       <div>
         <a class="btn" href="index.html">Accueil</a>
         <a class="btn" href="headers.html">Headers</a>
-        <a class="btn primary" href="sections.html">Sections (Menu)</a> 
         <a class="btn" href="footers.html">Footers</a>
       </div>
     </div>
 
     <div class="toolbar">
-      <h2 id="sectionTitle" style="margin: 0; padding-right: 15px;">Toutes les sections</h2> 
       <button id="btnNew" class="btn primary">+ Nouvelle section</button>
       <button id="btnExport" class="btn">Exporter JSON</button>
       <label class="btn">Importer JSON <input id="btnImport" type="file" accept=".json" style="display:none" /></label>
@@ -31,7 +29,7 @@
     <div id="editorWrap" style="display:none;margin-top:18px;">
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong id="inp-type">SECTION</strong> — Éditeur</div> 
+          <div><strong id="inp-type">SECTION</strong> — Éditeur</div>
           <div><button id="editorCancel" class="btn">Fermer</button></div>
         </div>
 
@@ -56,15 +54,10 @@
             <div class="label">CSS</div>
             <textarea id="csscode"></textarea>
           </div>
-          
-          <div class="form-row" style="align-items:flex-start">
-            <div class="label">JavaScript</div>
-            <textarea id="jscode"></textarea>
-          </div>
           <div class="form-row" style="align-items:flex-start">
             <div class="label">Preview</div>
             <div style="flex:1">
-              <div id="livePreview" class="preview"></div>
+              <iframe id="livePreview" class="preview-iframe" sandbox="allow-scripts"></iframe>
             </div>
           </div>
 

@@ -44,6 +44,38 @@ function combineCode(html, css){
     return combined;
 }
 
+// Helper function to create the full isolated HTML document for an iframe
+function createIframeContent(html, css, name = 'Aperçu'){
+  const combined = combineCode(html, css);
+  
+  // Note: assets/styles.css est chargé pour que les classes globales (boutons, couleurs) soient disponibles
+  return `
+    <!doctype html>
+    <html lang="fr">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>${name}</title>
+        
+        <link rel="stylesheet" href="assets/styles.css" /> 
+        
+        <style>
+            /* Surcharge minimale pour le contexte de l'aperçu */
+            body { 
+                margin: 0; 
+                padding: 10px; /* Petit padding de sécurité pour les bords */
+                /* Utilise la couleur de fond du corps principal pour un meilleur contraste */
+                background-color: var(--bg, #0f172a); 
+            }
+        </style>
+    </head>
+    <body>
+        ${combined}
+    </body>
+    </html>
+  `;
+}
+
 // échappement simple pour affichage brut
 function escapeHtml(s){
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -65,7 +97,7 @@ function renderPage(pageType){
 
   filteredTemplates.forEach(t => {
     const card = document.createElement('div'); card.className='card';
-    const combinedPreview = combineCode(t.html, t.css); 
+    // REMPLACÉ: const combinedPreview = combineCode(t.html, t.css); 
 
     // Structure de la card
     card.innerHTML = `
@@ -87,7 +119,7 @@ function renderPage(pageType){
       <div class="template-content">
         <div class="content-col preview-col">
           <p class="col-title">Aperçu Visuel</p>
-          <div class="preview" data-id="${t.id}">${combinedPreview}</div>
+          <div class="preview-iframe-wrapper" data-id="${t.id}"></div>
         </div>
         <div class="content-col code-col" style="display:flex; flex-direction:column">
           <p class="col-title">Code HTML</p>
@@ -99,6 +131,20 @@ function renderPage(pageType){
       </div>
     `;
     grid.appendChild(card);
+
+    // --- LOGIQUE D'INJECTION DE L'IFRAME POUR LA LISTE ---
+    const iframeWrapper = card.querySelector('.preview-iframe-wrapper');
+    const iframe = document.createElement('iframe');
+    iframe.className = 'preview-iframe-list'; // Classe pour le style dans styles.css
+    iframe.setAttribute('sandbox', 'allow-scripts');
+    iframeWrapper.appendChild(iframe);
+    
+    // Injection du contenu
+    const iframeContent = createIframeContent(t.html, t.css, t.name);
+    iframe.contentWindow.document.open();
+    iframe.contentWindow.document.write(iframeContent);
+    iframe.contentWindow.document.close();
+    // --- FIN LOGIQUE IFRAME ---
   });
 }
 
@@ -119,8 +165,14 @@ function openEditor(options){
   document.getElementById('htmlcode').value = html;
   document.getElementById('csscode').value = css;
   
-  // Combine pour l'aperçu en direct
-  document.getElementById('livePreview').innerHTML = combineCode(html, css); 
+  // --- LOGIQUE D'INJECTION DE L'IFRAME POUR L'ÉDITEUR ---
+  const iframeContent = createIframeContent(html, css, template ? template.name : 'Nouvelle Section');
+  const previewIframe = document.getElementById('livePreview'); // L'élément est maintenant un iframe
+  
+  previewIframe.contentWindow.document.open();
+  previewIframe.contentWindow.document.write(iframeContent);
+  previewIframe.contentWindow.document.close();
+  // --- FIN LOGIQUE IFRAME ---
 
   editorWrap.style.display = 'block';
   document.getElementById('name').focus();
@@ -288,7 +340,15 @@ document.addEventListener('DOMContentLoaded', ()=>{
   function updateLivePreview(){
       const html = document.getElementById('htmlcode').value;
       const css = document.getElementById('csscode').value;
-      document.getElementById('livePreview').innerHTML = combineCode(html, css);
+      
+      // --- LOGIQUE D'INJECTION DE L'IFRAME POUR L'ÉDITEUR ---
+      const iframeContent = createIframeContent(html, css, 'Aperçu en direct');
+      const previewIframe = document.getElementById('livePreview');
+
+      previewIframe.contentWindow.document.open();
+      previewIframe.contentWindow.document.write(iframeContent);
+      previewIframe.contentWindow.document.close();
+      // --- FIN LOGIQUE IFRAME ---
   }
   document.getElementById('htmlcode').addEventListener('input', updateLivePreview);
   const cssCodeElement = document.getElementById('csscode');
