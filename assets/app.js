@@ -203,6 +203,10 @@ function setupRealtimeListener(pageType) {
 
 // initialize page
 document.addEventListener('DOMContentLoaded', ()=>{
+  
+  // Confirmer l'initialisation du script
+  console.log("TemplateKit: Script app.js chargé."); 
+
   const pageType = document.body.dataset.type; // 'header', 'section', 'footer', ou 'home'
 
   if (pageType !== 'home') {
@@ -210,7 +214,19 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
 
   // Événement: Bouton Nouveau
-  document.getElementById('btnNew').addEventListener('click', ()=> openEditor({mode:'add', pageType}));
+  const btnNew = document.getElementById('btnNew');
+  
+  // Correction pour s'assurer que l'écouteur est attaché
+  if (btnNew) {
+      btnNew.addEventListener('click', () => {
+          console.log(`Bouton '+ Nouveau ${pageType}' cliqué. Tentative d'ouverture de l'éditeur.`);
+          openEditor({mode:'add', pageType});
+      });
+  } else {
+      if (pageType !== 'home') { 
+          console.error("ERREUR: Le bouton #btnNew est introuvable sur cette page. Vérifiez le HTML.");
+      }
+  }
   
   // Événements d'Export/Import (Placeholders)
   document.getElementById('btnExport').addEventListener('click', ()=>{
