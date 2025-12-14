@@ -6,38 +6,15 @@
   <title>Templates - Accueil</title>
   <link rel="stylesheet" href="assets/styles.css" />
   <style>
-    /* Style pour le menu des sections (le même que précédemment) */
-    .dropdown {
-        position: relative;
-        display: inline-block;
+    /* Styles spécifiques à l'accueil pour les liens */
+    .link-grid {
+      display: flex;
+      gap: 16px;
+      margin-top: 20px;
     }
-    .dropdown-content {
-        display: none;
-        position: absolute;
-        background-color: var(--card);
-        min-width: 220px;
-        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-        z-index: 1;
-        border-radius: var(--radius);
-        padding: 8px 0;
-        top: 100%;
-        left: 0;
-    }
-    .dropdown-content a {
-        color: #e6eef6;
-        padding: 8px 16px;
-        text-decoration: none;
-        display: block;
-        text-align: left;
-    }
-    .dropdown-content a:hover {background-color: #1e293b;}
-    .dropdown:hover .dropdown-content {
-        display: block;
-    }
-    .btn.dropdown-toggle::after {
-        content: ' \25BC'; /* Flèche vers le bas */
-        font-size: 0.8em;
-        margin-left: 5px;
+    .link-grid .btn {
+      padding: 12px 20px;
+      font-size: 16px;
     }
   </style>
 </head>
@@ -45,31 +22,16 @@
   <div class="container">
     <div class="header-row">
       <div class="brand"><span class="dot"></span> LP-TemplateKit</div>
-      <div>
-        <a class="btn" href="headers.html">Headers</a>
-        
-        <div class="dropdown">
-            <button class="btn dropdown-toggle">Sections</button>
-            <div class="dropdown-content">
-                <a href="sections.html?category=hero">Hero Section</a>
-                <a href="sections.html?category=value">Value Proposition / Avantages</a>
-                <a href="sections.html?category=features">Features / Fonctionnalités</a>
-                <a href="sections.html?category=social">Social Proof</a>
-                <a href="sections.html?category=about">About / Présentation</a>
-                <a href="sections.html?category=cta">Call to Action (CTA)</a>
-                <a href="sections.html?category=pricing">Pricing / Tarifs</a>
-                <a href="sections.html?category=faq">FAQ</a>
-                <a href="sections.html?category=contact">Contact / Formulaire</a>
-            </div>
-        </div>
-        
-        <a class="btn" href="footers.html">Footers</a>
-      </div>
+      <nav class="link-grid">
+        <a class="btn primary" href="templates.html?type=header">Gérer Headers</a>
+        <a class="btn primary" href="templates.html?type=section">Gérer Sections</a>
+        <a class="btn primary" href="templates.html?type=footer">Gérer Footers</a>
+      </nav>
     </div>
 
     <div class="card">
-      <h3>Bienvenue — ton kit de templates</h3>
-      <p class="small">Utilise les pages en haut pour gérer tes headers, sections, footers. Les templates sont sauvegardés **publiquement dans la base de données Firebase** et sont partagés par tous. Tu peux utiliser les pages pour ajouter, éditer et supprimer des templates.</p>
+      <h3>Bienvenue — kit de templates simplifié</h3>
+      <p class="small">Utilisez les boutons ci-dessus pour naviguer et gérer vos templates (Headers, Sections, Footers). La base de données Firebase est utilisée pour la sauvegarde publique.</p>
     </div>
   </div>
 </body>

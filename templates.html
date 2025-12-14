@@ -3,32 +3,35 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Headers</title>
+  <title>Gestion des Templates</title>
   <link rel="stylesheet" href="assets/styles.css" />
 </head>
-<body data-type="header">
+<body data-type="template-page"> 
   <div class="container">
     <div class="header-row">
       <div class="brand"><span class="dot"></span> LP-TemplateKit</div>
       <div>
         <a class="btn" href="index.html">Accueil</a>
-        <a class="btn" href="sections.html">Sections</a>
-        <a class="btn" href="footers.html">Footers</a>
+        <a class="btn" href="templates.html?type=header">Headers</a>
+        <a class="btn" href="templates.html?type=section">Sections</a>
+        <a class="btn" href="templates.html?type=footer">Footers</a>
       </div>
     </div>
 
     <div class="toolbar">
-      <button id="btnNew" class="btn primary">+ Nouveau header</button>
+      <button id="btnNew" class="btn primary">+ Nouveau </button> 
       <button id="btnExport" class="btn">Exporter JSON</button>
       <label class="btn">Importer JSON <input id="btnImport" type="file" accept=".json" style="display:none" /></label>
     </div>
 
-    <div id="grid" class="grid"></div>
+    <div id="grid" class="grid">
+      <div class="card"><div class="small">Chargement des templates...</div></div>
+    </div>
 
     <div id="editorWrap" style="display:none;margin-top:18px;">
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong id="inp-type">HEADER</strong> — Éditeur</div>
+          <div><strong id="inp-type">TEMPLATE</strong> — Éditeur</div>
           <div><button id="editorCancel" class="btn">Fermer</button></div>
         </div>
         <div style="margin-top:10px">
