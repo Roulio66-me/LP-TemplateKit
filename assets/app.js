@@ -1,29 +1,18 @@
 /**
  * LP-TemplateKit - Logique Applicative (app.js)
- * Implémente le CRUD, le Live Preview et l'écoute en temps réel (onSnapshot)
- * en utilisant Firebase Firestore et JavaScript Vanilla.
- *
- * NOTE : REMPLACEZ LES PLACEHOLDERS CI-DESSOUS PAR VOTRE CONFIGURATION FIREBASE RÉELLE.
+ * UTILISE LE SDK FIREBASE V12 EN MODE MODULES ES
  */
 
-// --- I. Configuration Firebase (Section III) ---
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
-};
+// Importations modulaires de Firebase
+import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-// Initialisation de Firebase
-if (typeof firebase !== 'undefined') {
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const templatesCollection = db.collection('templates');
-    
-    // Pour les timestamps (createdAt)
-    const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp;
+// Récupération de l'instance de l'application initialisée dans templates.html
+const firebaseApp = window.firebaseApp;
+
+if (firebaseApp) {
+    // Initialisation Firestore
+    const db = getFirestore(firebaseApp);
+    const templatesCollection = collection(db, 'templates');
 
     // Référence au conteneur principal
     const templatesContainer = document.getElementById('templates-container');
@@ -34,6 +23,7 @@ if (typeof firebase !== 'undefined') {
     const templateForm = document.getElementById('template-form');
     // Références aux champs du formulaire
     const templateIdField = document.getElementById('template-id');
+    const templateTypeField = document.getElementById('template-type');
     const templateNameField = document.getElementById('template-name');
     const templateDescriptionField = document.getElementById('template-description');
     const templateHtmlField = document.getElementById('template-html');
@@ -55,7 +45,6 @@ if (typeof firebase !== 'undefined') {
     function updateLivePreview(htmlCode, cssCode) {
         if (!livePreviewIframe) return;
 
-        // Le HTML complet avec les styles CSS globaux injectés
         const iframeContent = `
             <!DOCTYPE html>
             <html lang="fr">
@@ -65,7 +54,7 @@ if (typeof firebase !== 'undefined') {
                     ${cssCode}
                 </style>
                 <style>
-                    /* Injection des variables CSS hôtes pour le thème */
+                    /* Injection des variables CSS hôtes pour le thème (pour réutilisation) */
                     :root {
                         --color-primary: #007bff;
                         --color-secondary: #6c757d;
@@ -75,7 +64,6 @@ if (typeof firebase !== 'undefined') {
                         --color-text-dark: #212529;
                         --font-family: 'Inter', sans-serif;
                     }
-                    /* Le corps de l'iframe est par défaut blanc pour le rendu de composant */
                     body { margin: 0; padding: 0; font-family: var(--font-family); }
                 </style>
             </head>
@@ -92,7 +80,7 @@ if (typeof firebase !== 'undefined') {
 
     /**
      * Crée une carte de template (F03) dans le DOM.
-     * @param {Object} template - Le document Firestore.
+     * @param {Object} template - Le document Firestore (QueryDocumentSnapshot).
      */
     function createTemplateCard(template) {
         const docId = template.id;
@@ -102,14 +90,12 @@ if (typeof firebase !== 'undefined') {
         card.className = 'template-card';
         card.dataset.id = docId;
 
-        // Contenu de l'iframe pour l'aperçu de la carte
         const iframeContent = `
             <!DOCTYPE html>
             <html lang="fr">
             <head>
                 <style>
                     ${data.css}
-                    /* Styles minimal pour le rendu de la carte */
                     body { margin: 0; padding: 0; font-family: sans-serif; }
                 </style>
             </head>
@@ -158,7 +144,6 @@ if (typeof firebase !== 'undefined') {
     function renderTemplates(snapshot) {
         if (!templatesContainer) return;
         
-        // Nettoyer les cartes existantes pour l'écoute en temps réel
         templatesContainer.innerHTML = ''; 
 
         if (snapshot.empty) {
@@ -182,7 +167,6 @@ if (typeof firebase !== 'undefined') {
     function openModal(templateData = null, docId = null) {
         if (!editorModal) return;
 
-        // Réinitialiser le formulaire
         templateForm.reset();
         templateIdField.value = '';
         templateTypeField.value = currentTemplateType;
@@ -201,8 +185,7 @@ if (typeof firebase !== 'undefined') {
             // Mode Création (F02)
             modalTitle.textContent = `Créer un Nouveau ${currentTemplateType.charAt(0).toUpperCase() + currentTemplateType.slice(1)}`;
             saveButton.textContent = 'Créer le Template';
-            // Initialisation de l'aperçu pour la création
-            updateLivePreview('<h1>Votre HTML ici</h1>', '/* Votre CSS ici */');
+            updateLivePreview('\n\n<h1>Titre du Composant</h1>', '/* Votre CSS ici */');
         }
 
         editorModal.style.display = 'block';
@@ -221,7 +204,7 @@ if (typeof firebase !== 'undefined') {
      * F02, F04: Gère la soumission du formulaire (Création ou Mise à Jour).
      * @param {Event} e 
      */
-    function handleFormSubmit(e) {
+    async function handleFormSubmit(e) {
         e.preventDefault();
 
         const id = templateIdField.value;
@@ -233,29 +216,21 @@ if (typeof firebase !== 'undefined') {
             css: templateCssField.value,
         };
 
-        if (id) {
-            // Mise à Jour (Update - F04)
-            templatesCollection.doc(id).update(data)
-                .then(() => {
-                    alert('Template mis à jour avec succès !');
-                    closeModal();
-                })
-                .catch(error => {
-                    console.error("Erreur de mise à jour: ", error);
-                    alert("Erreur lors de la mise à jour du template.");
-                });
-        } else {
-            // Création (Create - F02)
-            data.createdAt = serverTimestamp();
-            templatesCollection.add(data)
-                .then(() => {
-                    alert('Template créé avec succès !');
-                    closeModal();
-                })
-                .catch(error => {
-                    console.error("Erreur de création: ", error);
-                    alert("Erreur lors de la création du template.");
-                });
+        try {
+            if (id) {
+                // Mise à Jour (Update - F04)
+                await updateDoc(doc(db, 'templates', id), data);
+                alert('Template mis à jour avec succès !');
+            } else {
+                // Création (Create - F02)
+                data.createdAt = serverTimestamp();
+                await addDoc(templatesCollection, data);
+                alert('Template créé avec succès !');
+            }
+            closeModal();
+        } catch (error) {
+            console.error("Erreur CRUD: ", error);
+            alert("Erreur lors de l'opération. Vérifiez vos règles de sécurité Firestore.");
         }
     }
 
@@ -263,16 +238,15 @@ if (typeof firebase !== 'undefined') {
      * F05: Gère la suppression d'un template.
      * @param {string} docId 
      */
-    function deleteTemplate(docId) {
-        if (confirm("Êtes-vous sûr de vouloir supprimer définitivement ce template ? Cette action est irréversible. (F05)")) {
-            templatesCollection.doc(docId).delete()
-                .then(() => {
-                    alert('Template supprimé avec succès !');
-                })
-                .catch(error => {
-                    console.error("Erreur de suppression: ", error);
-                    alert("Erreur lors de la suppression du template.");
-                });
+    async function deleteTemplate(docId) {
+        if (confirm("Êtes-vous sûr de vouloir supprimer définitivement ce template ? (F05)")) {
+            try {
+                await deleteDoc(doc(db, 'templates', docId));
+                alert('Template supprimé avec succès !');
+            } catch (error) {
+                console.error("Erreur de suppression: ", error);
+                alert("Erreur lors de la suppression du template.");
+            }
         }
     }
 
@@ -286,7 +260,7 @@ if (typeof firebase !== 'undefined') {
             alert(`${type} copié dans le presse-papiers !`);
         }).catch(err => {
             console.error('Erreur de copie:', err);
-            alert("Erreur lors de la copie. Le navigateur ne supporte pas l'API ou l'accès a été refusé.");
+            alert("Erreur lors de la copie.");
         });
     }
 
@@ -294,7 +268,7 @@ if (typeof firebase !== 'undefined') {
 
     // 1. Gérer le Type de Template (F01)
     const urlParams = new URLSearchParams(window.location.search);
-    currentTemplateType = urlParams.get('type') || 'header'; // Défaut à 'header'
+    currentTemplateType = urlParams.get('type') || 'header'; 
 
     const titleMap = {
         'header': 'Headers',
@@ -302,7 +276,6 @@ if (typeof firebase !== 'undefined') {
         'footer': 'Footers'
     };
     
-    // Mettre à jour le titre de la page et de la section
     if (document.getElementById('current-category-title')) {
         document.getElementById('current-category-title').textContent = titleMap[currentTemplateType] || 'Templates';
         document.title = `LP-TemplateKit | ${titleMap[currentTemplateType] || 'Templates'}`;
@@ -310,23 +283,24 @@ if (typeof firebase !== 'undefined') {
 
     // 2. Écoute en Temps Réel (F08)
     if (templatesContainer) {
-        templatesCollection
-            .where('type', '==', currentTemplateType)
-            .orderBy('createdAt', 'desc') // Optionnel, pour un meilleur affichage
-            .onSnapshot(renderTemplates, error => {
-                console.error("Erreur onSnapshot: ", error);
-                templatesContainer.innerHTML = '<p class="error-state">Erreur lors du chargement des templates. Vérifiez la configuration et les règles de sécurité Firestore.</p>';
-            });
+        const q = query(
+            templatesCollection,
+            where('type', '==', currentTemplateType),
+            orderBy('createdAt', 'desc')
+        );
+
+        onSnapshot(q, renderTemplates, error => {
+            console.error("Erreur onSnapshot: ", error);
+            templatesContainer.innerHTML = '<p class="error-state">Erreur lors du chargement des templates. Vérifiez vos règles de sécurité Firestore.</p>';
+        });
     }
 
     // 3. Événements de l'Interface
 
-    // Événement d'ouverture de la modal (F02)
     if (openCreateModalBtn) {
         openCreateModalBtn.addEventListener('click', () => openModal());
     }
 
-    // Événement de fermeture de la modal
     if (closeBtn) {
         closeBtn.addEventListener('click', closeModal);
     }
@@ -336,30 +310,36 @@ if (typeof firebase !== 'undefined') {
         }
     }
 
-    // Événement de soumission du formulaire (F02, F04)
-    if (templateForm) {
-        templateForm.addEventListener('submit', handleFormSubmit);
-    }
-
-    // Événements d'entrée pour le Live Preview (F06)
+    // Live Preview (F06)
     if (templateHtmlField && templateCssField) {
-        const updatePreview = () => updateLivePreview(templateHtmlField.value, templateCssField.value);
+        let previewTimeout;
+        const updatePreview = () => {
+             clearTimeout(previewTimeout);
+             previewTimeout = setTimeout(() => {
+                updateLivePreview(templateHtmlField.value, templateCssField.value);
+            }, 150); 
+        };
         templateHtmlField.addEventListener('input', updatePreview);
         templateCssField.addEventListener('input', updatePreview);
     }
     
-    // Événements de clic délégués sur le conteneur des templates pour le CRUD et les Actions Rapides
+    if (templateForm) {
+        templateForm.addEventListener('submit', handleFormSubmit);
+    }
+
+    // Événements délégués (CRUD + Actions Rapides)
     if (templatesContainer) {
         templatesContainer.addEventListener('click', async (e) => {
             const id = e.target.dataset.id;
             if (!id) return;
             
-            // F04: Modifier
+            const templateRef = doc(db, 'templates', id);
+
             if (e.target.classList.contains('edit-btn')) {
                 try {
-                    const doc = await templatesCollection.doc(id).get();
-                    if (doc.exists) {
-                        openModal(doc.data(), id);
+                    const docSnap = await getDoc(templateRef);
+                    if (docSnap.exists()) {
+                        openModal(docSnap.data(), id);
                     } else {
                         alert("Template non trouvé.");
                     }
@@ -367,16 +347,14 @@ if (typeof firebase !== 'undefined') {
                     console.error("Erreur de récupération pour modification:", error);
                 }
             } 
-            // F05: Supprimer
             else if (e.target.classList.contains('delete-btn')) {
                 deleteTemplate(id);
             } 
-            // F07: Copier HTML / CSS
             else if (e.target.classList.contains('copy-html-btn') || e.target.classList.contains('copy-css-btn')) {
                 try {
-                    const doc = await templatesCollection.doc(id).get();
-                    if (doc.exists) {
-                        const data = doc.data();
+                    const docSnap = await getDoc(templateRef);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
                         if (e.target.classList.contains('copy-html-btn')) {
                             copyToClipboard(data.html, 'HTML');
                         } else {
@@ -387,7 +365,6 @@ if (typeof firebase !== 'undefined') {
                     console.error("Erreur de récupération pour copie:", error);
                 }
             }
-            // F07: Plein Écran
             else if (e.target.classList.contains('fullscreen-btn')) {
                 const card = e.target.closest('.template-card');
                 const iframe = card ? card.querySelector('iframe') : null;
@@ -410,9 +387,9 @@ if (typeof firebase !== 'undefined') {
     }
 
 } else {
-    // Afficher une erreur si le SDK Firebase n'est pas chargé
+    // Si l'initialisation a échoué (peu probable avec la méthode module)
     const templatesContainer = document.getElementById('templates-container');
     if(templatesContainer) {
-        templatesContainer.innerHTML = '<p class="error-state">ERREUR: Le SDK Firebase n\'a pas été chargé. Vérifiez vos balises &lt;script&gt; dans templates.html.</p>';
+        templatesContainer.innerHTML = '<p class="error-state">ERREUR: L\'initialisation de Firebase a échoué. Vérifiez vos clés et la console.</p>';
     }
 }
