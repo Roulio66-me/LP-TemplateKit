@@ -57,7 +57,7 @@ nav a{color:var(--muted);text-decoration:none;margin-left:12px}
   border:1px solid rgba(255,255,255,0.03);
 }
 
-/* STYLES POUR L'AFFICHAGE CÔTE À CÔTÉ (dans chaque carte) */
+/* STYLES POUR L'AFFICHAGE CÔTÉ À CÔTÉ (dans chaque carte) */
 .template-content{
   display:flex;
   gap:var(--gap);
@@ -79,7 +79,7 @@ nav a{color:var(--muted);text-decoration:none;margin-left:12px}
   max-height:220px;
   min-height:100px;
 }
-/* FIN STYLES CÔTE À CÔTÉ */
+/* FIN STYLES CÔTÉ À CÔTÉ */
 
 /* --- Styles pour les Iframes d'Aperçu (Isolation) --- */
 

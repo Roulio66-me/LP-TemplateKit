@@ -2,7 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
 import { getFirestore, collection, onSnapshot, query, where, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
-// Votre configuration Firebase
+// Votre configuration Firebase (NE PAS CHANGER)
 const firebaseConfig = {
   apiKey: "AIzaSyD4mOy5q1T4wZ2xaB8s1OjU3JDsimMKDVQ",
   authDomain: "templatekit-23386.firebaseapp.com",
@@ -48,7 +48,7 @@ function combineCode(html, css){
 function createIframeContent(html, css, name = 'Aperçu'){
   const combined = combineCode(html, css);
   
-  // Note: assets/styles.css est chargé pour que les classes globales (boutons, couleurs) soient disponibles
+  // Correction pour s'assurer que le chemin vers styles.css est correct
   return `
     <!doctype html>
     <html lang="fr">
@@ -57,14 +57,13 @@ function createIframeContent(html, css, name = 'Aperçu'){
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <title>${name}</title>
         
-        <link rel="stylesheet" href="assets/styles.css" /> 
+        <link rel="stylesheet" href="/assets/styles.css" /> 
         
         <style>
             /* Surcharge minimale pour le contexte de l'aperçu */
             body { 
                 margin: 0; 
-                padding: 10px; /* Petit padding de sécurité pour les bords */
-                /* Utilise la couleur de fond du corps principal pour un meilleur contraste */
+                padding: 10px; 
                 background-color: var(--bg, #0f172a); 
             }
         </style>
@@ -82,7 +81,7 @@ function escapeHtml(s){
 }
 
 
-let allTemplates = []; // Stocke les templates chargés pour les actions (edit/copy/delete)
+let allTemplates = []; 
 
 // render list for current pageType
 function renderPage(pageType){
@@ -97,7 +96,7 @@ function renderPage(pageType){
 
   filteredTemplates.forEach(t => {
     const card = document.createElement('div'); card.className='card';
-
+    
     // Structure de la card
     card.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -131,19 +130,17 @@ function renderPage(pageType){
     `;
     grid.appendChild(card);
 
-    // --- LOGIQUE D'INJECTION DE L'IFRAME POUR LA LISTE ---
+    // LOGIQUE D'INJECTION DE L'IFRAME POUR LA LISTE
     const iframeWrapper = card.querySelector('.preview-iframe-wrapper');
     const iframe = document.createElement('iframe');
-    iframe.className = 'preview-iframe-list'; // Classe pour le style dans styles.css
+    iframe.className = 'preview-iframe-list'; 
     iframe.setAttribute('sandbox', 'allow-scripts');
     iframeWrapper.appendChild(iframe);
     
-    // Injection du contenu
     const iframeContent = createIframeContent(t.html, t.css, t.name);
     iframe.contentWindow.document.open();
     iframe.contentWindow.document.write(iframeContent);
     iframe.contentWindow.document.close();
-    // --- FIN LOGIQUE IFRAME ---
   });
 }
 
@@ -164,20 +161,25 @@ function openEditor(options){
   document.getElementById('htmlcode').value = html;
   document.getElementById('csscode').value = css;
   
-  // --- LOGIQUE D'INJECTION DE L'IFRAME POUR L'ÉDITEUR ---
+  // INJECTION DE L'IFRAME POUR L'ÉDITEUR
   const iframeContent = createIframeContent(html, css, template ? template.name : 'Nouvelle Section');
-  const previewIframe = document.getElementById('livePreview'); // L'élément est maintenant un iframe
+  const previewIframe = document.getElementById('livePreview'); 
   
   previewIframe.contentWindow.document.open();
   previewIframe.contentWindow.document.write(iframeContent);
   previewIframe.contentWindow.document.close();
-  // --- FIN LOGIQUE IFRAME ---
+  
+  // Masquage de la Navbar hôte
+  document.body.classList.add('editor-open'); 
 
   editorWrap.style.display = 'block';
   document.getElementById('name').focus();
 }
 
 function closeEditor(){
+  // Réaffichage de la Navbar hôte
+  document.body.classList.remove('editor-open'); 
+  
   document.getElementById('editorWrap').style.display = 'none';
 }
 
@@ -185,18 +187,14 @@ function closeEditor(){
 function setupRealtimeListener(pageType) {
     const q = collection(db, TEMPLATES_COLLECTION);
     
-    // onSnapshot fournit une mise à jour en temps réel des données
     onSnapshot(q, (querySnapshot) => {
         allTemplates = [];
         querySnapshot.forEach((doc) => {
-            // Stocke l'ID du document Firestore comme 'id' du template
             allTemplates.push({ id: doc.id, ...doc.data() });
         });
-        // Une fois les données mises à jour, on rafraîchit l'affichage
         renderPage(pageType);
     }, (error) => {
         console.error("Erreur lors de la lecture des documents: ", error);
-        // Fallback si la connexion Firebase échoue
         const grid = document.getElementById('grid');
         grid.innerHTML = `<div class="card"><div class="small">Erreur de connexion à la base de données. Veuillez vérifier la console.</div></div>`;
     });
@@ -205,26 +203,45 @@ function setupRealtimeListener(pageType) {
 
 // initialize page
 document.addEventListener('DOMContentLoaded', ()=>{
+  
+  // Confirmer l'initialisation du script pour le débogage
+  console.log("TemplateKit: Script app.js chargé."); 
+
   const pageType = document.body.dataset.type; // 'header', 'section', 'footer', ou 'home'
 
   if (pageType !== 'home') {
       setupRealtimeListener(pageType);
   }
 
-  // new button
-  document.getElementById('btnNew').addEventListener('click', ()=> openEditor({mode:'add', pageType}));
+  // Événement: Bouton Nouveau (CORRECTION DE L'ÉCOUTEUR)
+  const btnNew = document.getElementById('btnNew');
   
-  // Export (logique non fonctionnelle sans loadTemplates/saveTemplates)
-  document.getElementById('btnExport').addEventListener('click', ()=>{
-      alert('L\'export direct de tous les templates n\'est pas supporté en mode Cloud. Utilisez la console Firebase pour les exports.');
-  });
-  // Import (logique non fonctionnelle)
-  document.getElementById('btnImport').addEventListener('change', (e)=>{
-      alert('L\'import direct n\'est pas supporté en mode Cloud.');
-  });
+  if (btnNew) {
+      btnNew.addEventListener('click', () => {
+          console.log(`Bouton '+ Nouveau ${pageType}' cliqué.`);
+          openEditor({mode:'add', pageType});
+      });
+  } else {
+      if (pageType !== 'home') { 
+          console.warn("Avertissement: Le bouton #btnNew est introuvable sur cette page. Assurez-vous d'être dans headers/sections/footers.html.");
+      }
+  }
+  
+  // Événements d'Export/Import (Placeholders)
+  const btnExport = document.getElementById('btnExport');
+  if (btnExport) {
+    btnExport.addEventListener('click', ()=>{
+        alert('L\'export direct de tous les templates n\'est pas supporté en mode Cloud. Utilisez la console Firebase pour les exports.');
+    });
+  }
+  const btnImport = document.getElementById('btnImport');
+  if (btnImport) {
+    btnImport.addEventListener('change', (e)=>{
+        alert('L\'import direct n\'est pas supporté en mode Cloud.');
+    });
+  }
 
-
-  // submit editor
+  // Événement: Soumission de l'éditeur (Enregistrer)
   document.getElementById('editorSave').addEventListener('click', async ()=>{
     const editorWrap = document.getElementById('editorWrap');
     const mode = editorWrap.dataset.mode;
@@ -236,6 +253,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     
     if(!name){ alert('Donne un nom'); return; }
 
+    // Utilisation de Date.now() pour createdAt et mise à jour simple de l'heure.
     const data = { type, name, description: desc, html, css: css || '', createdAt: Date.now() }; 
 
     try {
@@ -245,110 +263,107 @@ document.addEventListener('DOMContentLoaded', ()=>{
         }else if(mode === 'edit'){
             const id = editorWrap.dataset.id;
             const templateRef = doc(db, TEMPLATES_COLLECTION, id);
-            // On met à jour sans modifier le createdAt
+            // On met à jour sans modifier le createdAt (l'objet date initial)
             const updateData = { name, description: desc, html, css: css || '' };
             await updateDoc(templateRef, updateData);
             alert('Template mis à jour dans Firebase ✅');
         }
+        closeEditor(); // Fermer l'éditeur seulement si l'opération a réussi
     } catch(e) {
-        console.error("Erreur d'écriture dans Firebase: ", e);
-        alert("Erreur lors de l'enregistrement du template.");
+        console.error("ERREUR D'ÉCRITURE DANS FIREBASE: ", e);
+        // Alerte si l'écriture échoue (souvent un problème de règles de sécurité!)
+        alert(`Erreur lors de l'enregistrement du template. Consultez la console (F12) pour plus de détails. Cause probable : Règles de sécurité Firebase.`);
     }
 
-    closeEditor();
   });
 
+  // Événement: Annulation de l'éditeur
   document.querySelectorAll('#editorCancel').forEach(btn => btn.addEventListener('click', closeEditor));
 
-  // delegado click sur grid
-  document.getElementById('grid').addEventListener('click', async (e)=>{
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    const act = btn.dataset.act; 
-    const id = btn.dataset.id;
-    
-    // Utilise la liste chargée en mémoire (allTemplates)
-    const t = allTemplates.find(x=>x.id===id);
-    if(!t) return;
-
-    if(act === 'copy-html'){
-      copyToClipboard(t.html); 
-    }else if(act === 'copy-css'){
-      if (!t.css || t.css.trim() === '') {
-          alert('Pas de CSS à copier pour ce template.');
-          return;
-      }
-      copyToClipboard(t.css);
-    }else if(act === 'delete'){
-      if(confirm('Supprimer ce template ? (Action publique et définitive)')) {
-          try {
-              const docRef = doc(db, TEMPLATES_COLLECTION, id);
-              await deleteDoc(docRef);
-              alert('Template supprimé de Firebase ✅');
-              // L'onSnapshot va rafraîchir la page
-          } catch(e) {
-              console.error("Erreur de suppression dans Firebase: ", e);
-              alert("Erreur lors de la suppression du template.");
-          }
-      }
-    }else if(act === 'edit'){
-      openEditor({mode:'edit', pageType:t.type, template:t});
-    }else if(act === 'full'){
-      const combined = combineCode(t.html, t.css); 
+  // Événement délégué: Clic sur la grille (Copier, Éditer, Supprimer, Plein Écran)
+  const gridElement = document.getElementById('grid');
+  if (gridElement) {
+    gridElement.addEventListener('click', async (e)=>{
+      const btn = e.target.closest('button');
+      if(!btn) return;
+      const act = btn.dataset.act; 
+      const id = btn.dataset.id;
       
-      // Contenu pour la fenêtre pop-up plein écran
-      const fullScreenContent = `
-        <!doctype html>
-        <html lang="fr">
-        <head>
-          <meta charset="utf-8" />
-          <meta name="viewport" content="width=device-width,initial-scale=1" />
-          <title>${t.name} - Aperçu</title>
-          
-          <link rel="stylesheet" href="assets/styles.css" /> 
-          
-          <style>
-              body {
-                  /* Surcharge pour le mode plein écran */
-                  background: #071027; 
-                  padding: 0;
-                  margin: 0;
-                  display: block;
-              }
-              .template-preview-full {
-                  min-height: 100vh;
-              }
-          </style>
-        </head>
-        <body>
-          <div class="template-preview-full">
-              ${combined}
-          </div>
-        </body>
-        </html>
-      `;
+      const t = allTemplates.find(x=>x.id===id);
+      if(!t) return;
 
-      // Afficher l'aperçu en plein écran
-      const w = window.open('','_blank','width=900,height=700,scrollbars=yes');
-      w.document.open();
-      w.document.write(fullScreenContent);
-      w.document.close();
-    }
-  });
+      if(act === 'copy-html'){
+        copyToClipboard(t.html); 
+      }else if(act === 'copy-css'){
+        if (!t.css || t.css.trim() === '') {
+            alert('Pas de CSS à copier pour ce template.');
+            return;
+        }
+        copyToClipboard(t.css);
+      }else if(act === 'delete'){
+        if(confirm('Supprimer ce template ? (Action publique et définitive)')) {
+            try {
+                const docRef = doc(db, TEMPLATES_COLLECTION, id);
+                await deleteDoc(docRef);
+                alert('Template supprimé de Firebase ✅');
+            } catch(e) {
+                console.error("ERREUR DE SUPPRESSION DANS FIREBASE: ", e);
+                // Alerte si la suppression échoue
+                alert(`Erreur lors de la suppression du template. Consultez la console (F12). Cause probable : Règles de sécurité Firebase.`);
+            }
+        }
+      }else if(act === 'edit'){
+        openEditor({mode:'edit', pageType:t.type, template:t});
+      }else if(act === 'full'){
+        const combined = combineCode(t.html, t.css); 
+        // Afficher l'aperçu en plein écran
+        const w = window.open('','_blank','width=900,height=700,scrollbars=yes');
+        w.document.open();
+        w.document.write(`
+          <!doctype html>
+          <html lang="fr">
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width,initial-scale=1" />
+            <title>${t.name} - Aperçu</title>
+            
+            <link rel="stylesheet" href="/assets/styles.css" /> 
+            
+            <style>
+                body {
+                    background: #071027; 
+                    padding: 0;
+                    margin: 0;
+                    display: block;
+                }
+                .template-preview-full {
+                    min-height: 100vh;
+                }
+            </style>
+          </head>
+          <body>
+            <div class="template-preview-full">
+                ${combined}
+            </div>
+          </body>
+          </html>
+        `);
+        w.document.close();
+      }
+    });
+  }
 
-  // live preview while editing (écoute des deux champs)
+  // Événement: Live preview pendant l'édition
   function updateLivePreview(){
       const html = document.getElementById('htmlcode').value;
       const css = document.getElementById('csscode').value;
       
-      // --- LOGIQUE D'INJECTION DE L'IFRAME POUR L'ÉDITEUR ---
       const iframeContent = createIframeContent(html, css, 'Aperçu en direct');
       const previewIframe = document.getElementById('livePreview');
 
       previewIframe.contentWindow.document.open();
       previewIframe.contentWindow.document.write(iframeContent);
       previewIframe.contentWindow.document.close();
-      // --- FIN LOGIQUE IFRAME ---
   }
   document.getElementById('htmlcode').addEventListener('input', updateLivePreview);
   const cssCodeElement = document.getElementById('csscode');
