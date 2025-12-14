@@ -48,7 +48,7 @@ function combineCode(html, css){
 function createIframeContent(html, css, name = 'Aperçu'){
   const combined = combineCode(html, css);
   
-  // Charge les styles globaux pour que les boutons et couleurs fonctionnent dans l'iframe
+  // Note: assets/styles.css est chargé pour que les classes globales (boutons, couleurs) soient disponibles
   return `
     <!doctype html>
     <html lang="fr">
@@ -57,13 +57,14 @@ function createIframeContent(html, css, name = 'Aperçu'){
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <title>${name}</title>
         
-        <link rel="stylesheet" href="assets/styles.css" /> 
+        <link rel="stylesheet" href="/assets/styles.css" /> 
         
         <style>
             /* Surcharge minimale pour le contexte de l'aperçu */
             body { 
                 margin: 0; 
-                padding: 10px; 
+                padding: 10px; /* Petit padding de sécurité pour les bords */
+                /* Utilise la couleur de fond du corps principal pour un meilleur contraste */
                 background-color: var(--bg, #0f172a); 
             }
         </style>
@@ -165,14 +166,14 @@ function openEditor(options){
   
   // --- LOGIQUE D'INJECTION DE L'IFRAME POUR L'ÉDITEUR ---
   const iframeContent = createIframeContent(html, css, template ? template.name : 'Nouvelle Section');
-  const previewIframe = document.getElementById('livePreview'); 
+  const previewIframe = document.getElementById('livePreview'); // L'élément est maintenant un iframe
   
   previewIframe.contentWindow.document.open();
   previewIframe.contentWindow.document.write(iframeContent);
   previewIframe.contentWindow.document.close();
   // --- FIN LOGIQUE IFRAME ---
   
-  // NOUVEAUTÉ: Ajoute une classe pour masquer la barre de navigation hôte
+  // Ajoute une classe pour masquer la barre de navigation hôte
   document.body.classList.add('editor-open'); 
 
   editorWrap.style.display = 'block';
@@ -180,7 +181,7 @@ function openEditor(options){
 }
 
 function closeEditor(){
-  // NOUVEAUTÉ: Retire la classe pour réafficher la barre de navigation hôte
+  // Retire la classe pour réafficher la barre de navigation hôte
   document.body.classList.remove('editor-open'); 
   
   document.getElementById('editorWrap').style.display = 'none';
@@ -311,7 +312,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
           <meta name="viewport" content="width=device-width,initial-scale=1" />
           <title>${t.name} - Aperçu</title>
           
-          <link rel="stylesheet" href="assets/styles.css" /> 
+          <link rel="stylesheet" href="/assets/styles.css" /> 
           
           <style>
               body {
