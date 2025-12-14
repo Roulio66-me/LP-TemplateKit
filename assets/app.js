@@ -1,10 +1,25 @@
 /**
  * LP-TemplateKit - Logique Applicative (app.js)
  * UTILISE LE SDK FIREBASE V12 EN MODE MODULES ES
+ * * Ce fichier nécessite que l'objet 'window.firebaseApp' soit initialisé 
+ * dans templates.html avec votre configuration Firebase.
  */
 
-// Importations modulaires de Firebase
-import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+// Importations modulaires de Firebase Firestore
+import { 
+    getFirestore, 
+    collection, 
+    query, 
+    where, 
+    orderBy, 
+    onSnapshot, 
+    doc, 
+    getDoc, 
+    addDoc, 
+    updateDoc, 
+    deleteDoc, 
+    serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
 // Récupération de l'instance de l'application initialisée dans templates.html
 const firebaseApp = window.firebaseApp;
@@ -14,14 +29,12 @@ if (firebaseApp) {
     const db = getFirestore(firebaseApp);
     const templatesCollection = collection(db, 'templates');
 
-    // Référence au conteneur principal
+    // Référence aux éléments du DOM
     const templatesContainer = document.getElementById('templates-container');
-    // Références à la Modal
     const editorModal = document.getElementById('editor-modal');
     const modalTitle = document.getElementById('modal-title');
     const closeBtn = editorModal ? editorModal.querySelector('.close-btn') : null;
     const templateForm = document.getElementById('template-form');
-    // Références aux champs du formulaire
     const templateIdField = document.getElementById('template-id');
     const templateTypeField = document.getElementById('template-type');
     const templateNameField = document.getElementById('template-name');
@@ -32,15 +45,13 @@ if (firebaseApp) {
     const saveButton = document.getElementById('save-button');
     const openCreateModalBtn = document.getElementById('open-create-modal');
 
-    // Type de template actuel (header, section, footer)
+    // Type de template actuel (tiré de l'URL)
     let currentTemplateType = '';
     
     // --- II. Fonctions de Rendu et Utilitaires ---
 
     /**
      * F06: Met à jour l'aperçu en temps réel dans l'iframe.
-     * @param {string} htmlCode 
-     * @param {string} cssCode 
      */
     function updateLivePreview(htmlCode, cssCode) {
         if (!livePreviewIframe) return;
@@ -54,7 +65,7 @@ if (firebaseApp) {
                     ${cssCode}
                 </style>
                 <style>
-                    /* Injection des variables CSS hôtes pour le thème (pour réutilisation) */
+                    /* Variables CSS hôtes pour le thème (pour réutilisation) */
                     :root {
                         --color-primary: #007bff;
                         --color-secondary: #6c757d;
@@ -80,7 +91,6 @@ if (firebaseApp) {
 
     /**
      * Crée une carte de template (F03) dans le DOM.
-     * @param {Object} template - Le document Firestore (QueryDocumentSnapshot).
      */
     function createTemplateCard(template) {
         const docId = template.id;
@@ -90,6 +100,7 @@ if (firebaseApp) {
         card.className = 'template-card';
         card.dataset.id = docId;
 
+        // Contenu de l'iframe de la carte
         const iframeContent = `
             <!DOCTYPE html>
             <html lang="fr">
@@ -139,7 +150,6 @@ if (firebaseApp) {
 
     /**
      * Gère l'affichage des templates à partir d'un snapshot Firestore. (F08)
-     * @param {Object} snapshot - Le QuerySnapshot de Firestore.
      */
     function renderTemplates(snapshot) {
         if (!templatesContainer) return;
@@ -161,15 +171,15 @@ if (firebaseApp) {
 
     /**
      * Ouvre la modal en mode Création ou Modification.
-     * @param {Object} [templateData=null] - Données du template pour la modification (F04).
-     * @param {string} [docId=null] - ID du document pour la modification (F04).
      */
     function openModal(templateData = null, docId = null) {
         if (!editorModal) return;
 
         templateForm.reset();
         templateIdField.value = '';
-        templateTypeField.value = currentTemplateType;
+        
+        // IMPORTANT: Assure que le champ caché 'type' est bien défini en minuscule
+        templateTypeField.value = currentTemplateType.toLowerCase(); 
         
         if (templateData) {
             // Mode Modification (F04)
@@ -183,9 +193,10 @@ if (firebaseApp) {
             updateLivePreview(templateData.html, templateData.css);
         } else {
             // Mode Création (F02)
-            modalTitle.textContent = `Créer un Nouveau ${currentTemplateType.charAt(0).toUpperCase() + currentTemplateType.slice(1)}`;
+            const typeDisplay = currentTemplateType.charAt(0).toUpperCase() + currentTemplateType.slice(1);
+            modalTitle.textContent = `Créer un Nouveau ${typeDisplay}`;
             saveButton.textContent = 'Créer le Template';
-            updateLivePreview('\n\n<h1>Titre du Composant</h1>', '/* Votre CSS ici */');
+            updateLivePreview('', '/* Styles CSS ici */');
         }
 
         editorModal.style.display = 'block';
@@ -202,14 +213,14 @@ if (firebaseApp) {
 
     /**
      * F02, F04: Gère la soumission du formulaire (Création ou Mise à Jour).
-     * @param {Event} e 
      */
     async function handleFormSubmit(e) {
         e.preventDefault();
 
         const id = templateIdField.value;
         const data = {
-            type: templateTypeField.value,
+            // Assurance que le type est en minuscule pour le filtrage
+            type: templateTypeField.value.toLowerCase(), 
             name: templateNameField.value,
             description: templateDescriptionField.value,
             html: templateHtmlField.value,
@@ -230,13 +241,12 @@ if (firebaseApp) {
             closeModal();
         } catch (error) {
             console.error("Erreur CRUD: ", error);
-            alert("Erreur lors de l'opération. Vérifiez vos règles de sécurité Firestore.");
+            alert("Erreur lors de l'opération. (Vérifiez votre console F12)");
         }
     }
 
     /**
      * F05: Gère la suppression d'un template.
-     * @param {string} docId 
      */
     async function deleteTemplate(docId) {
         if (confirm("Êtes-vous sûr de vouloir supprimer définitivement ce template ? (F05)")) {
@@ -252,15 +262,13 @@ if (firebaseApp) {
 
     /**
      * F07: Copie le code dans le presse-papiers.
-     * @param {string} text - Le texte à copier.
-     * @param {string} type - 'HTML' ou 'CSS'.
      */
     function copyToClipboard(text, type) {
         navigator.clipboard.writeText(text).then(() => {
             alert(`${type} copié dans le presse-papiers !`);
         }).catch(err => {
             console.error('Erreur de copie:', err);
-            alert("Erreur lors de la copie.");
+            alert("Erreur lors de la copie. L'accès au presse-papiers a été refusé.");
         });
     }
 
@@ -268,7 +276,8 @@ if (firebaseApp) {
 
     // 1. Gérer le Type de Template (F01)
     const urlParams = new URLSearchParams(window.location.search);
-    currentTemplateType = urlParams.get('type') || 'header'; 
+    // Assurer que le type est toujours en minuscule pour correspondre aux données Firestore
+    currentTemplateType = (urlParams.get('type') || 'header').toLowerCase(); 
 
     const titleMap = {
         'header': 'Headers',
@@ -285,13 +294,15 @@ if (firebaseApp) {
     if (templatesContainer) {
         const q = query(
             templatesCollection,
-            where('type', '==', currentTemplateType),
+            // Filtration stricte sur le type en minuscule
+            where('type', '==', currentTemplateType), 
             orderBy('createdAt', 'desc')
         );
 
+        // L'écoute en temps réel gère l'affichage des nouveaux éléments sans rechargement
         onSnapshot(q, renderTemplates, error => {
             console.error("Erreur onSnapshot: ", error);
-            templatesContainer.innerHTML = '<p class="error-state">Erreur lors du chargement des templates. Vérifiez vos règles de sécurité Firestore.</p>';
+            templatesContainer.innerHTML = '<p class="error-state">Erreur lors du chargement des templates. Vérifiez vos règles de sécurité Firestore (allow read, write: if true;).</p>';
         });
     }
 
@@ -387,9 +398,9 @@ if (firebaseApp) {
     }
 
 } else {
-    // Si l'initialisation a échoué (peu probable avec la méthode module)
+    // Si l'application Firebase n'est pas trouvée (problème dans templates.html)
     const templatesContainer = document.getElementById('templates-container');
     if(templatesContainer) {
-        templatesContainer.innerHTML = '<p class="error-state">ERREUR: L\'initialisation de Firebase a échoué. Vérifiez vos clés et la console.</p>';
+        templatesContainer.innerHTML = '<p class="error-state">FATAL: L\'application Firebase n\'a pas pu être initialisée. Vérifiez le script d\'initialisation dans templates.html.</p>';
     }
 }
