@@ -48,7 +48,7 @@ function combineCode(html, css){
 function createIframeContent(html, css, name = 'Aperçu'){
   const combined = combineCode(html, css);
   
-  // Note: assets/styles.css est chargé pour que les classes globales (boutons, couleurs) soient disponibles
+  // Charge les styles globaux pour que les boutons et couleurs fonctionnent dans l'iframe
   return `
     <!doctype html>
     <html lang="fr">
@@ -63,8 +63,7 @@ function createIframeContent(html, css, name = 'Aperçu'){
             /* Surcharge minimale pour le contexte de l'aperçu */
             body { 
                 margin: 0; 
-                padding: 10px; /* Petit padding de sécurité pour les bords */
-                /* Utilise la couleur de fond du corps principal pour un meilleur contraste */
+                padding: 10px; 
                 background-color: var(--bg, #0f172a); 
             }
         </style>
@@ -97,8 +96,7 @@ function renderPage(pageType){
 
   filteredTemplates.forEach(t => {
     const card = document.createElement('div'); card.className='card';
-    // REMPLACÉ: const combinedPreview = combineCode(t.html, t.css); 
-
+    
     // Structure de la card
     card.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -167,18 +165,24 @@ function openEditor(options){
   
   // --- LOGIQUE D'INJECTION DE L'IFRAME POUR L'ÉDITEUR ---
   const iframeContent = createIframeContent(html, css, template ? template.name : 'Nouvelle Section');
-  const previewIframe = document.getElementById('livePreview'); // L'élément est maintenant un iframe
+  const previewIframe = document.getElementById('livePreview'); 
   
   previewIframe.contentWindow.document.open();
   previewIframe.contentWindow.document.write(iframeContent);
   previewIframe.contentWindow.document.close();
   // --- FIN LOGIQUE IFRAME ---
+  
+  // NOUVEAUTÉ: Ajoute une classe pour masquer la barre de navigation hôte
+  document.body.classList.add('editor-open'); 
 
   editorWrap.style.display = 'block';
   document.getElementById('name').focus();
 }
 
 function closeEditor(){
+  // NOUVEAUTÉ: Retire la classe pour réafficher la barre de navigation hôte
+  document.body.classList.remove('editor-open'); 
+  
   document.getElementById('editorWrap').style.display = 'none';
 }
 
@@ -211,10 +215,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if (pageType !== 'home') {
       setupRealtimeListener(pageType);
   }
-
-  // Le bouton d'import/export n'est plus pertinent avec une base de données publique
-  // on peut les enlever ou les modifier pour exporter/importer un backup
-  // Pour le moment, nous les laissons comme des placeholders (ils ne fonctionneront plus comme avant)
 
   // new button
   document.getElementById('btnNew').addEventListener('click', ()=> openEditor({mode:'add', pageType}));

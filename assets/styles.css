@@ -57,7 +57,7 @@ nav a{color:var(--muted);text-decoration:none;margin-left:12px}
   border:1px solid rgba(255,255,255,0.03);
 }
 
-/* STYLES POUR L'AFFICHAGE CÔTE À CÔTE (dans chaque carte) */
+/* STYLES POUR L'AFFICHAGE CÔTE À CÔTÉ (dans chaque carte) */
 .template-content{
   display:flex;
   gap:var(--gap);
@@ -81,17 +81,7 @@ nav a{color:var(--muted);text-decoration:none;margin-left:12px}
 }
 /* FIN STYLES CÔTE À CÔTÉ */
 
-/* SUPPRIMÉ: ANCIEN STYLE .preview
-.preview{
-  background:#071224;
-  border-radius:8px;
-  padding:12px;
-  overflow:hidden;
-  border:1px solid rgba(255,255,255,0.03);
-}
-*/
-
-/* --- NOUVEAUX Styles pour les Iframes d'Aperçu (Isolation) --- */
+/* --- Styles pour les Iframes d'Aperçu (Isolation) --- */
 
 /* Conteneur pour l'iframe dans la liste (remplace l'ancien .preview) */
 .preview-iframe-wrapper {
@@ -123,6 +113,26 @@ nav a{color:var(--muted);text-decoration:none;margin-left:12px}
   display: block;
   padding: 0;
 }
+
+/* --- NOUVEAU: Correction pour la Navbar Hôte Fixe --- */
+
+/* Lorsque l'éditeur est ouvert, on tente de masquer l'élément fixe de l'application hôte */
+body.editor-open {
+    /* Cache le contenu pour éviter de voir la barre hôte se déplacer */
+    overflow: hidden; 
+}
+
+/* Tente de masquer l'élément qui contient "MonProjet / Accueil Fonctionnalités Contact". 
+   Ce sélecteur est une supposition (le premier élément enfant du body qui n'est pas l'éditeur).
+   Si cela ne fonctionne pas, remplacez 'body.editor-open > *:first-child:not(#editorWrap)'
+   par le sélecteur exact de votre barre de navigation hôte (ex: body.editor-open #navbar-globale)
+*/
+body.editor-open > *:first-child:not(#editorWrap) {
+    /* Cache l'élément de la Navbar Hôte */
+    display: none !important; 
+}
+
+/* --- FIN NOUVEAU --- */
 
 
 .card .meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px}
